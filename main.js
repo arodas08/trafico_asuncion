@@ -1,4 +1,3 @@
-
 let chart;
 
 async function obtenerEventos() {
@@ -12,7 +11,7 @@ async function obtenerEventos() {
   noResult.classList.add('hidden');
 
   try {
-    const response = await fetch('http://192.168.5.53:8080/api/eventos/?format=json');
+    const response = await fetch('/api/eventos');
     const data = await response.json();
 
     const eventosFiltrados = data.filter(e => {

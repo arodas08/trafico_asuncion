@@ -1,0 +1,34 @@
+<!-- index.html generado automáticamente para trafico_asuncion -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tráfico Asunción</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+</head>
+<body class="bg-gray-100 p-4">
+  <div class="max-w-3xl mx-auto">
+    <h1 class="text-2xl font-bold mb-4">Incidentes de Tráfico en Asunción</h1>
+    <div class="flex flex-col md:flex-row gap-2 mb-4">
+      <input id="searchInput" type="text" placeholder="Buscar por nombre o ubicación" class="border p-2 rounded flex-1">
+      <select id="zoneSelect" class="border p-2 rounded">
+        <option value="">Zona</option>
+        <!-- Opciones dinámicas -->
+      </select>
+      <select id="incidentType" class="border p-2 rounded">
+        <option value="">Tipo</option>
+        <!-- Opciones dinámicas -->
+      </select>
+      <button id="searchBtn" class="bg-blue-600 text-white px-4 py-2 rounded">Buscar</button>
+      <button id="refreshBtn" class="bg-gray-400 text-white px-4 py-2 rounded">Refrescar</button>
+    </div>
+    <ul id="resultadoLista" class="mb-4 space-y-2"></ul>
+    <div id="noResult" class="hidden text-red-600 mb-4">No se encontraron resultados.</div>
+    <canvas id="chartIncidentes" height="120"></canvas>
+  </div>
+  <script src="main.js"></script>
+</body>
+</html>
