@@ -1,0 +1,14 @@
+{
+  "name": "trafico-asuncion",
+  "version": "1.0.0",
+  "description": "Aplicaci\u00f3n web para visualizar incidentes de tr\u00e1fico en Asunci\u00f3n con datos de una API externa.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
+  },
+  "author": "Usuario",
+  "license": "MIT"
+}

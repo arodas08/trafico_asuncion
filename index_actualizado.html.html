@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tráfico Asunción - Consulta Waze</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-gray-100 min-h-screen">
+  <header class="bg-blue-700 text-white p-4 shadow">
+    <div class="container mx-auto flex justify-between items-center">
+      <h1 class="text-2xl font-bold">Tráfico Asunción</h1>
+      <button id="refreshBtn" class="bg-white text-blue-700 px-4 py-2 rounded hover:bg-blue-100">
+        <i class="fas fa-sync-alt"></i> Actualizar
+      </button>
+    </div>
+  </header>
+
+  <main class="container mx-auto p-4">
+    <section class="bg-white rounded shadow p-4 mb-6">
+      <h2 class="text-xl font-semibold mb-4">Buscar Incidentes</h2>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+        <input id="searchInput" type="text" placeholder="Buscar por nombre o ubicación..." class="p-3 border rounded w-full">
+        <select id="zoneSelect" class="p-3 border rounded w-full">
+          <option value="">Todas las zonas</option>
+          <option>Centro</option>
+          <option>Villa Morra</option>
+          <option>San Lorenzo</option>
+          <option>Lambare</option>
+          <option>Fernando de la Mora</option>
+          <option>Ñemby</option>
+          <option>Mariano Roque Alonso</option>
+        </select>
+        <select id="incidentType" class="p-3 border rounded w-full">
+          <option value="">Todos los tipos</option>
+          <option>Accidentes</option>
+          <option>Obras viales</option>
+          <option>Manifestaciones</option>
+          <option>Inundaciones</option>
+          <option>Congestión extrema</option>
+          <option>Semáforos dañados</option>
+        </select>
+      </div>
+      <button id="searchBtn" class="bg-blue-700 text-white px-6 py-3 rounded hover:bg-blue-800 w-full md:w-auto">
+        <i class="fas fa-search"></i> Filtrar
+      </button>
+    </section>
+
+    <section class="bg-white rounded shadow p-4 mb-6">
+      <h2 class="text-xl font-semibold mb-4">Estadísticas de Incidentes</h2>
+      <canvas id="chartIncidentes" height="100"></canvas>
+    </section>
+
+    <section class="bg-white rounded shadow p-4">
+      <h2 class="text-xl font-semibold mb-4">Resultados</h2>
+      <ul id="resultadoLista" class="space-y-4"></ul>
+      <p id="noResult" class="text-gray-500 mt-4 hidden">No se encontraron resultados.</p>
+    </section>
+  </main>
+
+  <script>
+    let chart;
+
+    async function obtenerEventos() {
+      const query = document.getElementById('searchInput').value.trim().toLowerCase();
+      const zone = document.getElementById('zoneSelect').value;
+      const type = document.getElementById('incidentType').value;
+
+      const lista = document.getElementById('resultadoLista');
+      const noResult = document.getElementById('noResult');
+      lista.innerHTML = '';
+      noResult.classList.add('hidden');
+
+      try {
+        const response = await fetch('http://192.168.5.53:8080/api/eventos/?format=json');
+        const data = await response.json();
+
+        const eventosFiltrados = data.filter(e => {
+          const matchQuery = !query || (e.nombre?.toLowerCase().includes(query) || e.ubicacion?.toLowerCase().includes(query));
+          const matchZone = !zone || (e.zona && e.zona === zone);
+          const matchType = !type || (e.tipo && e.tipo === type);
+          return matchQuery && matchZone && matchType;
+        });
+
+        if (eventosFiltrados.length === 0) {
+          noResult.classList.remove('hidden');
+        }
+
+        eventosFiltrados.forEach(e => {
+          const li = document.createElement('li');
+          li.className = 'p-4 border rounded shadow flex flex-col md:flex-row justify-between items-start md:items-center';
+
+          const title = document.createElement('div');
+          title.innerHTML = `<strong>${e.nombre}</strong><br><span class="text-sm text-gray-600">${e.ubicacion} - ${e.zona || ''}</span><br><span class="text-sm text-gray-500">${e.tipo || ''}</span>`;
+
+          const link = document.createElement('a');
+          link.href = `https://waze.com/ul?ll=${e.lat},${e.lng}&navigate=yes`;
+          link.target = '_blank';
+          link.className = 'mt-2 md:mt-0 md:ml-4 text-blue-700 hover:underline';
+          link.innerHTML = '<i class="fas fa-location-arrow mr-1"></i> Ver en Waze';
+
+          li.appendChild(title);
+          li.appendChild(link);
+          lista.appendChild(li);
+        });
+
+        actualizarGrafico(data);
+
+      } catch (error) {
+        console.error('Error al obtener los eventos:', error);
+        alert('No se pudo conectar con la API. Asegúrese de que esté en línea.');
+      }
+    }
+
+    function actualizarGrafico(eventos) {
+      const conteo = {};
+      eventos.forEach(e => {
+        const tipo = e.tipo || 'Otro';
+        conteo[tipo] = (conteo[tipo] || 0) + 1;
+      });
+
+      const tipos = Object.keys(conteo);
+      const cantidades = Object.values(conteo);
+
+      const ctx = document.getElementById('chartIncidentes').getContext('2d');
+
+      if (chart) chart.destroy();
+
+      chart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: tipos,
+          datasets: [{
+            label: 'Cantidad de Incidentes',
+            data: cantidades,
+            backgroundColor: 'rgba(59, 130, 246, 0.6)',
+            borderColor: 'rgba(59, 130, 246, 1)',
+            borderWidth: 1
+          }]
+        },
+        options: {
+          responsive: true,
+          scales: {
+            y: {
+              beginAtZero: true
+            }
+          }
+        }
+      });
+    }
+
+    document.getElementById('searchBtn').addEventListener('click', obtenerEventos);
+    document.getElementById('refreshBtn').addEventListener('click', obtenerEventos);
+    window.addEventListener('DOMContentLoaded', obtenerEventos);
+  </script>
+</body>
+</html>
